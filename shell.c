@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "parser/ast.h"
 #include "shell.h"
 
@@ -11,8 +12,24 @@ void initialize(void)
 void run_command(node_t *node)
 {
     /* For testing: */
-    print_tree(node);
+    // print_tree(node);
     
     if (prompt)
         prompt = "msh ➜ ";
+    
+    if(node->type == NODE_COMMAND) {
+      char *program = node->command.program;
+      char **argv = node->command.argv;
+      int status;
+      // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
+      // printf("PID = %i", pid);
+
+      if(fork() != 0) {
+        // printf("waitpid\n");
+        waitpid(-1, &status, 0);
+      } else {
+        // printf("execve\n");
+        execvp(program, argv, 0);
+      }
+    }
 }
