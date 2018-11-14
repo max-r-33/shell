@@ -1,5 +1,9 @@
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include "parser/ast.h"
 #include "shell.h"
 
@@ -7,7 +11,7 @@ void initialize(void)
 {
     /* This code will be called once at startup */
     if (prompt)
-        prompt = "msh ➜ ";
+        prompt = "$msh ➜ ";
 }
 
 void run_command(node_t *node)
@@ -16,7 +20,7 @@ void run_command(node_t *node)
     // print_tree(node);
     
     if (prompt)
-        prompt = "msh ➜ ";
+        prompt = "$msh ➜ ";
     
     if(node->type == NODE_COMMAND) {
       char *program = node->command.program;
@@ -27,15 +31,25 @@ void run_command(node_t *node)
       // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
       // printf("PID = %i", pid);
 
-      if(strcmp(argv[0],"exit") == 0) {
-        // printf("HELLO");
-        exit(0);
+      if(strcmp(program, "exit") == 0) {
+        if(argv[1]){
+          exit(atoi(argv[1]));
+        }
+        exit(3);
       } else if(pid != 0) {
-        // printf("waitpid\n");
         waitpid(-1, &status, 0);
       } else {
-        // printf("execve\n");
-        execvp(program, argv, 0);
+        if(strcmp(program, "cd") == 0) {
+          if(!argv[1]) {
+            fprintf(stderr, "msh: expected argument to cd command\n");
+          } else if(chdir(argv[1]) != 0) {
+            perror("msh");
+          }
+        } else {
+          if(execvp(program, argv) != 0) {
+            perror("msh");
+          }
+        }
       }
     }
 }
