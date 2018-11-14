@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include "parser/ast.h"
 #include "shell.h"
@@ -21,10 +22,15 @@ void run_command(node_t *node)
       char *program = node->command.program;
       char **argv = node->command.argv;
       int status;
+      int pid = fork();
+
       // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
       // printf("PID = %i", pid);
 
-      if(fork() != 0) {
+      if(strcmp(argv[0],"exit") == 0) {
+        // printf("HELLO");
+        exit(0);
+      } else if(pid != 0) {
         // printf("waitpid\n");
         waitpid(-1, &status, 0);
       } else {
