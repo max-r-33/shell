@@ -31,15 +31,11 @@ void run_command(node_t *node)
       // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
 
       if(strcmp(program, "exit") == 0) {
-        if(argv[1]){
-          exit(atoi(argv[1]));
-        }
-        exit(3);
+        argv[1] ? exit(atoi(argv[1])) : exit(3);
       } else if(pid != 0) {
         signal(SIGINT, SIG_IGN);
         waitpid(-1, &status, 0);
       } else {
-        // signal(SIGINT, SIG_IGN);
         if(strcmp(program, "cd") == 0) {
           if(!argv[1]) {
             fprintf(stderr, "msh: expected argument to cd command\n");
