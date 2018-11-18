@@ -7,27 +7,26 @@
 #include "parser/ast.h"
 #include "shell.h"
 
-void initialize(void)
-{
+void initialize(void) {
     /* This code will be called once at startup */
-    if (prompt)
+    if (prompt) {
         prompt = "$msh ➜ ";
+    }
 }
 
-void run_command(node_t *node)
-{
+void run_command(node_t *node) {
     /* For testing: */
-    // print_tree(node);
+    print_tree(node);
     
-    if (prompt)
+    if (prompt) {
         prompt = "$msh ➜ ";
+    }
     
     if(node->type == NODE_COMMAND) {
       char *program = node->command.program;
       char **argv = node->command.argv;
       int status;
       int pid = fork();
-
       // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
 
       if(strcmp(program, "exit") == 0) {
@@ -52,5 +51,7 @@ void run_command(node_t *node)
     } else if(node->type == NODE_SEQUENCE) {
       run_command(node->sequence.first);
       run_command(node->sequence.second);
+    } else if(node->type == NODE_PIPE) {
+      // pipe
     }
 }
