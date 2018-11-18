@@ -29,7 +29,6 @@ void run_command(node_t *node)
       int pid = fork();
 
       // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
-      // printf("PID = %i", pid);
 
       if(strcmp(program, "exit") == 0) {
         if(argv[1]){
@@ -37,8 +36,10 @@ void run_command(node_t *node)
         }
         exit(3);
       } else if(pid != 0) {
+        signal(SIGINT, SIG_IGN);
         waitpid(-1, &status, 0);
       } else {
+        // signal(SIGINT, SIG_IGN);
         if(strcmp(program, "cd") == 0) {
           if(!argv[1]) {
             fprintf(stderr, "msh: expected argument to cd command\n");
@@ -46,10 +47,14 @@ void run_command(node_t *node)
             perror("msh");
           }
         } else {
+          signal(SIGINT, SIG_DFL);
           if(execvp(program, argv) != 0) {
             perror("msh");
           }
         }
       }
+    } else if(node->type == NODE_SEQUENCE) {
+      run_command(node->sequence.first);
+      run_command(node->sequence.second);
     }
 }
