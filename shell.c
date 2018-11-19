@@ -7,10 +7,10 @@
 #include "parser/ast.h"
 #include "shell.h"
 
-#define STDIN   0
-#define STDOUT  1
-#define PIPE_RD 0
-#define PIPE_WR 1
+#define STDIN_FILENO   0
+#define STDOUT_FILENO  1
+#define READ_END       0
+#define WRITE_END      1
 
 void initialize(void) {
     /* This code will be called once at startup */
@@ -69,37 +69,48 @@ void run_command(node_t *node) {
       run_command(node->sequence.first);
       run_command(node->sequence.second);
     } else if(node->type == NODE_PIPE) {
-      // node_t **argv = node->pipe.parts;
-      // char *first = argv[0]->command.program;
-      // char *second = argv[1]->command.program;
-      // char **firstArgs = argv[0]->command.argv;
-      // char **secondArgs = argv[1]->command.argv;
-      // 
-      // int pfds[2];
-      // pipe(pfds);
-      // pid_t firstPid, secondPid = -1;
-      // 
-      // // printf("executing %s\n", firstArgs[0]);
-      // // printf("executing %s\n", secondArgs[0]);
-      // // firstArgs[1] ? printf("first argument: %s", firstArgs[1]) : printf("");
-      // // secondArgs[1] ? printf("second argument: %s", secondArgs[1]) : printf("");
-      // 
-      // firstPid = fork();
-      // if(firstPid == 0) {
-      //   close(1);
-      //   dup(pfds[1]);
-      //   close(pfds[0]);
-      //   // run_command(argv[0]);
-      //   execlp(firstArgs[0], firstArgs[0], NULL);
-      //   // perror("exec");
-      // } else {
-      //   close(0);
-      //   dup(pfds[0]);
-      //   close(pfds[1]);
-      //   // run_command(argv[1]);
-      //   execlp(secondArgs[0], secondArgs[0], NULL);
-      // }      
-      // waitpid(firstPid, NULL, 0);
-      // waitpid(secondPid, NULL, 0);
+      node_t **argv = node->pipe.parts;
+      char **firstArgs = argv[0]->command.argv;
+      char **secondArgs = argv[1]->command.argv;
+      char *first = argv[0]->command.program;
+      char *second = argv[1]->command.program;
+      
+      // printf("executing %s\n", firstArgs[0]);
+      // printf("executing %s\n", secondArgs[0]);
+      // firstArgs[1] ? printf("first argument: %s", firstArgs[1]) : printf("");
+      // secondArgs[1] ? printf("second argument: %s", secondArgs[1]) : printf("");
+      
+      pid_t pid;
+      int fd[2];
+      pipe(fd);
+      pid = fork();
+      char *firstcmd = first;
+      char *scmd = second;
+      char *frsarg = firstArgs[1];
+      char *secarg = secondArgs[1];
+      
+      if(pid==0) {
+          dup2(fd[WRITE_END], STDOUT_FILENO);
+          close(fd[READ_END]);
+          close(fd[WRITE_END]);
+          execlp(firstcmd, firstcmd, frsarg, (char*) NULL);
+          fprintf(stderr, "Failed to execute '%s'\n", firstcmd);
+          exit(1);
+      } else { 
+          pid=fork();
+          if(pid==0) {
+              dup2(fd[READ_END], STDIN_FILENO);
+              close(fd[WRITE_END]);
+              close(fd[READ_END]);
+              execlp(scmd, scmd, secarg,(char*) NULL);
+              fprintf(stderr, "Failed to execute '%s'\n", scmd);
+              exit(1);
+          } else {
+              int status;
+              close(fd[READ_END]);
+              close(fd[WRITE_END]);
+              waitpid(pid, &status, 0);
+          }
+      }
     }
 }
