@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 
 node_t *make_redir(node_t *child, int fd, int mode, int fd2, char *target)
 {
