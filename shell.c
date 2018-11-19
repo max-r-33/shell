@@ -7,10 +7,10 @@
 #include "parser/ast.h"
 #include "shell.h"
 
-#define STDIN_FILENO   0
-#define STDOUT_FILENO  1
-#define READ_END       0
-#define WRITE_END      1
+#define STDIN   0
+#define STDOUT  1
+#define PIPE_RD 0
+#define PIPE_WR 1
 
 void initialize(void) {
     /* This code will be called once at startup */
@@ -81,35 +81,28 @@ void run_command(node_t *node) {
       // secondArgs[1] ? printf("second argument: %s", secondArgs[1]) : printf("");
       
       pid_t pid;
-      int fd[2];
-      pipe(fd);
+      int fds[2];
+      pipe(fds);
       pid = fork();
-      char *firstcmd = first;
-      char *scmd = second;
-      char *frsarg = firstArgs[1];
-      char *secarg = secondArgs[1];
-      
-      if(pid==0) {
-          dup2(fd[WRITE_END], STDOUT_FILENO);
-          close(fd[READ_END]);
-          close(fd[WRITE_END]);
-          execlp(firstcmd, firstcmd, frsarg, (char*) NULL);
-          fprintf(stderr, "Failed to execute '%s'\n", firstcmd);
+            
+      if(pid == 0) {
+          dup2(fds[PIPE_WR], STDOUT);
+          close(fds[PIPE_RD]);
+          close(fds[PIPE_WR]);
+          execlp(first, first, firstArgs[1], (char*) NULL);
           exit(1);
       } else { 
-          pid=fork();
-          if(pid==0) {
-              dup2(fd[READ_END], STDIN_FILENO);
-              close(fd[WRITE_END]);
-              close(fd[READ_END]);
-              execlp(scmd, scmd, secarg,(char*) NULL);
-              fprintf(stderr, "Failed to execute '%s'\n", scmd);
+          pid = fork();
+          if(pid == 0) {
+              dup2(fds[PIPE_RD], STDIN);
+              close(fds[PIPE_WR]);
+              close(fds[PIPE_RD]);
+              execlp(second, second, secondArgs[1],(char*) NULL);
               exit(1);
           } else {
-              int status;
-              close(fd[READ_END]);
-              close(fd[WRITE_END]);
-              waitpid(pid, &status, 0);
+              close(fds[PIPE_RD]);
+              close(fds[PIPE_WR]);
+              waitpid(pid, NULL, 0);
           }
       }
     }
