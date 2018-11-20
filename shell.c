@@ -39,16 +39,16 @@ void run_command(node_t *node) {
           perror("cd");
         }
       } else if(strcmp(program, "set") == 0) {
-        if(argv[1] && argv[2]) {
-          setenv(argv[1], argv[2], 1);
-          printf("%s=%s", argv[0], argv[1]);
+        char *name = strtok(argv[1], "=");
+        char *val  = strtok(NULL, "=");
+        if(name && val) {
+          setenv(name, val, 1);
         } else {
           perror("setenv");
         }
       } else if(strcmp(program, "unset") == 0) {
         if(argv[1]) {
           unsetenv(argv[1]);
-          printf("%s=%s", argv[1], argv[1]);
         } else {
           perror("unsetenv");
         }
@@ -59,7 +59,6 @@ void run_command(node_t *node) {
           waitpid(-1, &status, 0);
         } else {
           signal(SIGINT, SIG_DFL);
-          // printf("program = %s\nargv[0] = %s\nargv[1] = %s\n", program, argv[0], argv[1]);
           if(execvp(program, argv) != 0) {
             perror("msh");
           }
@@ -73,15 +72,10 @@ void run_command(node_t *node) {
       char **firstArgs = argv[0]->command.argv;
       char **secondArgs = argv[1]->command.argv;
       char *first = argv[0]->command.program;
-      char *second = argv[1]->command.program;
-      
-      // printf("executing %s\n", firstArgs[0]);
-      // printf("executing %s\n", secondArgs[0]);
-      // firstArgs[1] ? printf("first argument: %s", firstArgs[1]) : printf("");
-      // secondArgs[1] ? printf("second argument: %s", secondArgs[1]) : printf("");
-      
+      char *second = argv[1]->command.program;    
       pid_t pid;
       int fds[2];
+      
       pipe(fds);
       pid = fork();
             
