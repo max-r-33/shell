@@ -89,7 +89,7 @@ void run_command(node_t *node) {
           dup2(fds[PIPE_WR], STDOUT);
           close(fds[PIPE_RD]);
           close(fds[PIPE_WR]);
-          execlp(first, first, firstArgs[1], firstArgs[2], (char*) NULL);
+          execvp(first, firstArgs);
           exit(1);
       } else { 
           pid = fork();
@@ -97,7 +97,7 @@ void run_command(node_t *node) {
               dup2(fds[PIPE_RD], STDIN);
               close(fds[PIPE_WR]);
               close(fds[PIPE_RD]);
-              execlp(second, second, secondArgs[1], secondArgs[2], (char*) NULL);
+              execvp(second, secondArgs);
               exit(1);
           } else {
               close(fds[PIPE_RD]);
